@@ -4,7 +4,7 @@
     <param name="/use_sim_time" value="true" />
 
     <!--- Run Rviz-->
-    <node type="rviz" name="rviz" pkg="rviz" args="-d $(find relocalisation)/launch/test2.rviz" />
+    <node type="rviz" name="rviz" pkg="rviz" args="-d $(find relocalisation)/launch/test3.rviz" />
 
     <!--- TF -->
     <node pkg="tf" type="static_transform_publisher" name="camera_init_to_map"  args="0 0 0 1.570795   0  1.570795 /map /camera_init 100" />
@@ -14,12 +14,13 @@
     <node pkg="tf" type="static_transform_publisher" name="base_link_to_camera" args="0 0 0 -1.570795 -1.570795 0 /camera_init /base_link   10" />
     <!--- Relocalisation -->    
     <node pkg="relocalisation" type="pcl_publish"  name="pcl_publish"    output="screen"/>
-    <node pkg="relocalisation" type="pcl_partition"  name="pcl_partition"    output="screen"/>
+<!--     <node pkg="relocalisation" type="pcl_partition"  name="pcl_partition"    output="screen"/> -->
    <!-- <node pkg="relocalisation" type="pcl_filter"  name="pcl_filter"    output="screen"/>
     <node pkg="relocalisation" type="pcl_downsampling"  name="pcl_downsampling"    output="screen"/> -->
 <!--     <node pkg="relocalisation" type="extractFeatures"  name="extractFeatures"    output="screen"/>  -->
     <node pkg="relocalisation" type="segmentation"  name="segmentation"    output="screen"/>    
-    <node pkg="relocalisation" type="pcl_matching"  name="pcl_matching"    output="screen"/>
+<!--     <node pkg="relocalisation" type="pcl_matching"  name="pcl_matching"    output="screen"/> -->
+<!-- <node pkg="relocalisation" type="final"  name="final"    output="screen"/> -->
 <!--     <node pkg="relocalisation" type="dict_make"  name="dict_make"    output="screen"/> -->
 
     <!--- <node pkg="Relocalisation" type="write"  name="write"    output="screen"/>  -->  
