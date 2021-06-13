@@ -17,6 +17,7 @@
 #include <visualization_msgs/Marker.h>
 #include <relocalisation/updated_coord.h>
 #include <std_msgs/Float64.h>
+#include <string> 
 
 typedef PointMatcher<float> PM;
 
@@ -25,9 +26,10 @@ class listener
 	public:
 	    pcl::PointCloud<pcl::PointXYZ> map;
 	    pcl::PointCloud<pcl::PointXYZ> scan;
-	    
+	    pcl::PointCloud<pcl::PointXYZ> do_icp(pcl::PointCloud<pcl::PointXYZ> &reference_area ,pcl::PointCloud<pcl::PointXYZ> &incoming_scan);
 	    void mapCB(const sensor_msgs::PointCloud2 &input);
 	    void scanCB(const sensor_msgs::PointCloud2 &input);
+        float p,q,r;
 };
 
 	void listener::mapCB(const sensor_msgs::PointCloud2 &input)
@@ -40,7 +42,7 @@ class listener
 	    pcl::fromROSMsg(input, scan);
 	}
 
-	pcl::PointCloud<pcl::PointXYZ> do_icp(pcl::PointCloud<pcl::PointXYZ> &reference_area ,pcl::PointCloud<pcl::PointXYZ> &incoming_scan)
+	pcl::PointCloud<pcl::PointXYZ> listener::do_icp(pcl::PointCloud<pcl::PointXYZ> &reference_area ,pcl::PointCloud<pcl::PointXYZ> &incoming_scan)
 	{
 		
 		sensor_msgs::PointCloud2 ref_area;
@@ -162,9 +164,11 @@ class listener
 
         
         PM::TransformationParameters T = icp(object, scene);
-
-        // std::cout << "Transformation Matrix = \n" << T << std::endl;
-
+        p = T(0,3);
+        q = T(1,3);
+        r = T(2,3);
+        std::cout << "Transformation Matrix - 1st element = \n" << T(0,3) << std::endl;
+        std::cout << "Transformation Matrix = \n" << T << std::endl;
         PM::DataPoints transformed_object(object);
         icp.transformations.apply(transformed_object, T);
 
@@ -177,19 +181,18 @@ class listener
     	return transformed_cloud_pcl;
 
 	}
-
-	relocalisation::updated_coord find_position(pcl::PointCloud<pcl::PointXYZ> &input) 
+	relocalisation::updated_coord find_position(float a, float b, float c) 
 	{   
 		// To find current position
 
-        Eigen::Vector4f centroid;
+        //Eigen::Vector4f centroid;
     
-        pcl::compute3DCentroid(input, centroid);
+        //pcl::compute3DCentroid(input, centroid);
 
         relocalisation::updated_coord new_msg;
-        new_msg.x = centroid[0];
-        new_msg.y = centroid[1];
-        new_msg.z = centroid[2];
+        new_msg.x = -c;//centroid[0];
+        new_msg.y = -a;//centroid[1];
+        new_msg.z = -b;//centroid[2];
 
         return new_msg;
         // coords_pub.publish(new_msg);
@@ -397,11 +400,11 @@ int main(int argc, char **argv){
 
         if (area.points.size()>0 && scan.points.size()>0 )
         {
-	        pcl::PointCloud<pcl::PointXYZ> aligned_scan = do_icp(area,scan);
+	        pcl::PointCloud<pcl::PointXYZ> aligned_scan = L.do_icp(area,scan);
 
 	        
 
-	        relocalisation::updated_coord position = find_position(aligned_scan);
+	        relocalisation::updated_coord position = find_position(L.p, L.q, L.r);
 
 	        // std::cout << position.x << " " << temp.x << endl;
 	        // std::cout << position.y << " " << temp.y << endl;
