@@ -1,3 +1,4 @@
+
 #include <iostream>
 #include <ros/ros.h>
 #include <pcl/visualization/cloud_viewer.h>
@@ -26,6 +27,8 @@ typedef PointMatcher<float> PM;
 class listener
 {
 	public:
+		
+
 	    pcl::PointCloud<pcl::PointXYZ> map;
 	    pcl::PointCloud<pcl::PointXYZ> scan;
 	    pcl::PointCloud<pcl::PointXYZ> do_icp(pcl::PointCloud<pcl::PointXYZ> &reference_area ,pcl::PointCloud<pcl::PointXYZ> &incoming_scan);
@@ -39,13 +42,32 @@ class listener
         //float lin_acc_z = 0;
         float lin_vel_x = 0;
         float lin_vel_y = 0;
-        ros::Time begin;
-        ros::Time t_now;
+
+        int flag_t = 0;
+        int flag_p = 0;
+        long double initial_time = 0;
+        long double t_now = 0;
+        long double t_diff=0;
 };
     
     void listener::imuCB(const sensor_msgs::Imu::ConstPtr& msg)
     {
-      //ROS_INFO("Imu Seq: [%d]", msg->header.seq);
+      std_msgs::Header imuHeader;
+      imuHeader = msg->header;
+
+      if (flag_t==0){
+      	initial_time = imuHeader.stamp.toSec();
+      	t_diff = 0;
+      	std::cout << "initial time" << initial_time << std::endl;
+
+      	flag_t=1;
+      }
+      else{
+      	t_now = imuHeader.stamp.toSec();
+      	t_diff = t_now - initial_time;
+      	std::cout << "Current time " << t_now << " initial time " << initial_time << " Diff Time "<< t_diff<<std::endl;
+      }
+      
       //ROS_INFO("Imu Orientation x: [%f], y: [%f], z: [%f], w: [%f]", msg->orientation.x,msg->orientation.y,msg->orientation.z,msg->orientation.w);
       lin_acc_x = msg->linear_acceleration.x;
       lin_acc_y = msg->linear_acceleration.y;
@@ -187,8 +209,8 @@ class listener
         p = T(0,3);
         q = T(1,3);
         r = T(2,3);
-        std::cout << "Transformation Matrix - 1st element = \n" << T(0,3) << std::endl;
-        std::cout << "Transformation Matrix = \n" << T << std::endl;
+        // std::cout << "Transformation Matrix - 1st element = \n" << T(0,3) << std::endl;
+        // std::cout << "Transformation Matrix = \n" << T << std::endl;
         PM::DataPoints transformed_object(object);
         icp.transformations.apply(transformed_object, T);
 
@@ -202,22 +224,13 @@ class listener
 
 	}
 	relocalisation::updated_coord listener::find_position()//float a, float b, float c) 
-	{   
-		// To find current position
-
-        //Eigen::Vector4f centroid;
-    
-        //pcl::compute3DCentroid(input, centroid);
-        t_now = ros::Time::now();
-        ros::Duration delta_T = t_now - begin;
-        float delta_T_sec = delta_T.toSec();
-        std::cout<<"delta T"<<delta_T_sec;
-        lin_vel_x += lin_acc_x*(delta_T_sec);
-        lin_vel_y += lin_acc_y*(delta_T_sec);
+	{       
+        lin_vel_x += lin_acc_x*(t_diff);
+        lin_vel_y += lin_acc_y*(t_diff);
 
         relocalisation::updated_coord new_msg;
-        new_msg.x = lin_vel_x*delta_T_sec + 0.5*lin_acc_x*delta_T_sec*delta_T_sec;//centroid[0];
-        new_msg.y = lin_vel_x*delta_T_sec + 0.5*lin_acc_x*delta_T_sec*delta_T_sec;//centroid[1];
+        new_msg.x = lin_vel_x*t_diff + 0.5*lin_acc_x*t_diff*t_diff;//centroid[0];
+        new_msg.y = lin_vel_x*t_diff + 0.5*lin_acc_x*t_diff*t_diff;//centroid[1];
         new_msg.z = 0; // for now //centroid[2];
 
         return new_msg;
@@ -390,9 +403,10 @@ int main(int argc, char **argv){
     ros::init(argc, argv, "final");
     ros::NodeHandle nh;
     ROS_INFO("\033[1;32m---->\033 [Major workback starting.");
-    ros::Time begin = ros::Time::now();
+
     listener L;
-    L.begin = begin;
+
+    std::cout << setprecision(20);
 
     ros::Subscriber pcl_sub_map = nh.subscribe("pcl_map", 10, &listener::mapCB, &L);
     ros::Subscriber pcl_sub_scan = nh.subscribe("full_cloud_projected", 10, &listener::scanCB, &L);
@@ -442,9 +456,9 @@ int main(int argc, char **argv){
 
 	        // std::cout << position.x << " "<< position.y <<" "<< position.z << std::endl;
 
-	        coord_x = position.x;// + temp.x; 
+	        coord_x = position.x+ temp.x; 
 	        coord_y = position.y;
-	        coord_z = position.z;// + temp.z;
+	        coord_z = position.z + temp.z;
 
 
 	        visualization_msgs::Marker current_position = make_marker(coord_x,coord_y,coord_z);
