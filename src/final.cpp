@@ -2,6 +2,7 @@
 #include <ros/ros.h>
 #include <pcl/visualization/cloud_viewer.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/Imu.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/point_cloud.h>
 #include <pcl/octree/octree.h>
@@ -21,6 +22,7 @@
 
 typedef PointMatcher<float> PM;
 
+
 class listener
 {
 	public:
@@ -29,8 +31,26 @@ class listener
 	    pcl::PointCloud<pcl::PointXYZ> do_icp(pcl::PointCloud<pcl::PointXYZ> &reference_area ,pcl::PointCloud<pcl::PointXYZ> &incoming_scan);
 	    void mapCB(const sensor_msgs::PointCloud2 &input);
 	    void scanCB(const sensor_msgs::PointCloud2 &input);
+        void imuCB(const sensor_msgs::Imu::ConstPtr &input);
+        relocalisation::updated_coord find_position();//float a, float b, float c);
         float p,q,r;
+        float lin_acc_x = 0;
+        float lin_acc_y = 0;
+        //float lin_acc_z = 0;
+        float lin_vel_x = 0;
+        float lin_vel_y = 0;
+        ros::Time begin;
+        ros::Time t_now;
 };
+    
+    void listener::imuCB(const sensor_msgs::Imu::ConstPtr& msg)
+    {
+      //ROS_INFO("Imu Seq: [%d]", msg->header.seq);
+      //ROS_INFO("Imu Orientation x: [%f], y: [%f], z: [%f], w: [%f]", msg->orientation.x,msg->orientation.y,msg->orientation.z,msg->orientation.w);
+      lin_acc_x = msg->linear_acceleration.x;
+      lin_acc_y = msg->linear_acceleration.y;
+      //lin_acc_z = msg->linear_acceleration.z;
+    }
 
 	void listener::mapCB(const sensor_msgs::PointCloud2 &input)
 	{
@@ -181,18 +201,24 @@ class listener
     	return transformed_cloud_pcl;
 
 	}
-	relocalisation::updated_coord find_position(float a, float b, float c) 
+	relocalisation::updated_coord listener::find_position()//float a, float b, float c) 
 	{   
 		// To find current position
 
         //Eigen::Vector4f centroid;
     
         //pcl::compute3DCentroid(input, centroid);
+        t_now = ros::Time::now();
+        ros::Duration delta_T = t_now - begin;
+        float delta_T_sec = delta_T.toSec();
+        std::cout<<"delta T"<<delta_T_sec;
+        lin_vel_x += lin_acc_x*(delta_T_sec);
+        lin_vel_y += lin_acc_y*(delta_T_sec);
 
         relocalisation::updated_coord new_msg;
-        new_msg.x = -c;//centroid[0];
-        new_msg.y = -a;//centroid[1];
-        new_msg.z = -b;//centroid[2];
+        new_msg.x = lin_vel_x*delta_T_sec + 0.5*lin_acc_x*delta_T_sec*delta_T_sec;//centroid[0];
+        new_msg.y = lin_vel_x*delta_T_sec + 0.5*lin_acc_x*delta_T_sec*delta_T_sec;//centroid[1];
+        new_msg.z = 0; // for now //centroid[2];
 
         return new_msg;
         // coords_pub.publish(new_msg);
@@ -244,7 +270,7 @@ class listener
         return marker;
 	}
 
-	pcl::PointCloud<pcl::PointXYZ> extract_trim_area(pcl::PointCloud<pcl::PointXYZ> &input,float a,float b,float c)
+	pcl::PointCloud<pcl::PointXYZ> extract_trim_area(pcl::PointCloud<pcl::PointXYZ> &input,float a,float b,float c, bool isMap)
     {
         pcl::PointCloud<pcl::PointXYZ> cloud_partitioned;
 
@@ -258,8 +284,11 @@ class listener
         center_point.x = a;
         center_point.y = b;
         center_point.z = c; 
-
         float radius = 30;
+        if(isMap){
+            radius = 40;    
+        }
+        
         std::vector<int> radiusIdx;
         std::vector<float> radiusSQDist;
         if (octree.radiusSearch (center_point, radius, radiusIdx, radiusSQDist) > 0)
@@ -361,12 +390,13 @@ int main(int argc, char **argv){
     ros::init(argc, argv, "final");
     ros::NodeHandle nh;
     ROS_INFO("\033[1;32m---->\033 [Major workback starting.");
-
+    ros::Time begin = ros::Time::now();
     listener L;
+    L.begin = begin;
 
     ros::Subscriber pcl_sub_map = nh.subscribe("pcl_map", 10, &listener::mapCB, &L);
     ros::Subscriber pcl_sub_scan = nh.subscribe("full_cloud_projected", 10, &listener::scanCB, &L);
-
+    ros::Subscriber imu_sub = nh.subscribe("/kitti/oxts/imu", 10, &listener::imuCB, &L);
     // ros::Publisher pub_position = nh.advertise<relocalisation::updated_coord>("final_point",1);
     // ros::Publisher pub_test = nh.advertise<sensor_msgs::PointCloud2>("check",1);
     ros::Publisher pcl_pub_aligned = nh.advertise<sensor_msgs::PointCloud2>("pcl_aligned", 1);
@@ -391,9 +421,9 @@ int main(int argc, char **argv){
 
 	    pcl::PointCloud<pcl::PointXYZ> rotated_scan = rotate_pointcloud(L.scan);
 
-        pcl::PointCloud<pcl::PointXYZ> select_area = extract_trim_area(L.map,temp.x,temp.y,temp.z);
+        pcl::PointCloud<pcl::PointXYZ> select_area = extract_trim_area(L.map,temp.x,temp.y,temp.z, 1);
 
-        pcl::PointCloud<pcl::PointXYZ> scan = extract_trim_area(rotated_scan,0,0,0);
+        pcl::PointCloud<pcl::PointXYZ> scan = extract_trim_area(rotated_scan,0,0,0, 0);
 
 	    pcl::PointCloud<pcl::PointXYZ> area = translate_pointcloud(select_area,temp.x,temp.y,temp.z);
 
@@ -401,10 +431,10 @@ int main(int argc, char **argv){
         if (area.points.size()>0 && scan.points.size()>0 )
         {
 	        pcl::PointCloud<pcl::PointXYZ> aligned_scan = L.do_icp(area,scan);
-
+            
 	        
 
-	        relocalisation::updated_coord position = find_position(L.p, L.q, L.r);
+	        relocalisation::updated_coord position = L.find_position();//L.p, L.q, L.r);
 
 	        // std::cout << position.x << " " << temp.x << endl;
 	        // std::cout << position.y << " " << temp.y << endl;
@@ -412,9 +442,10 @@ int main(int argc, char **argv){
 
 	        // std::cout << position.x << " "<< position.y <<" "<< position.z << std::endl;
 
-	        coord_x = position.x + temp.x; 
+	        coord_x = position.x;// + temp.x; 
 	        coord_y = position.y;
-	        coord_z = position.z + temp.z;
+	        coord_z = position.z;// + temp.z;
+
 
 	        visualization_msgs::Marker current_position = make_marker(coord_x,coord_y,coord_z);
 	        marker_pub.publish(current_position);
