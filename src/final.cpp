@@ -17,7 +17,9 @@
 #include <visualization_msgs/Marker.h>
 #include <relocalisation/updated_coord.h>
 #include <std_msgs/Float64.h>
+
 #include <pcl/filters/crop_box.h>
+
 
 
 typedef PointMatcher<float> PM;
@@ -27,6 +29,7 @@ class listener
 	public:
 	    pcl::PointCloud<pcl::PointXYZ> map;
 	    pcl::PointCloud<pcl::PointXYZ> scan;
+
 	    float p,q,r; // translation from icp
 	    float pose[7];
 	    
@@ -35,6 +38,7 @@ class listener
 	    void imuCB(const nav_msgs::Odometry &input);
         
         pcl::PointCloud<pcl::PointXYZ> do_icp(pcl::PointCloud<pcl::PointXYZ> &reference_area ,pcl::PointCloud<pcl::PointXYZ> &incoming_scan);
+
 };
 
 	void listener::mapCB(const sensor_msgs::PointCloud2 &input)
@@ -46,6 +50,7 @@ class listener
 	{
 	    pcl::fromROSMsg(input, scan);
 	}
+
 
 	void listener::imuCB(const nav_msgs::Odometry &input)
 	{
@@ -181,8 +186,10 @@ class listener
         p = T(0,3);
         q = T(1,3);
         r = T(2,3);
+
         // std::cout << "Transformation Matrix - 1st element = \n" << T(0,3) << std::endl;
         // std::cout << "Transformation Matrix = \n" << T << std::endl;
+
         PM::DataPoints transformed_object(object);
         icp.transformations.apply(transformed_object, T);
 
@@ -195,8 +202,10 @@ class listener
     	return transformed_cloud_pcl;
 
 	}
+
 	relocalisation::updated_coord find_position(float a, float b, float c) 
 	{   
+
         relocalisation::updated_coord new_msg;
         new_msg.x = -c;
         new_msg.y = -a;
@@ -418,6 +427,14 @@ int main(int argc, char **argv){
 	        
 
 	        relocalisation::updated_coord position = find_position(L.p, L.q, L.r);
+
+
+	        // std::cout << position.x << " " << temp.x << endl;
+	        // std::cout << position.y << " " << temp.y << endl;
+	        // std::cout << position.z << " " << temp.z << endl;
+
+	        // std::cout << position.x << " "<< position.y <<" "<< position.z << std::endl;
+
 
 	        coord_x = position.x + temp.x; 
 	        coord_y = position.y;
