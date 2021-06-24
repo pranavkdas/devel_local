@@ -53,19 +53,19 @@ typedef pcl::PointXYZI  PointType;
 
 // extern const string pointCloudTopic = "/pcl_scan";
 extern const string pointCloudTopic = "/kitti/velo/pointcloud";
-extern const string imuTopic = "/imu/data";
+extern const string imuTopic = "/kitti/oxts/imu";
 
 
 // Save pcd
 extern const string fileDirectory = "/tmp/";
 
 // VLP-16
-//extern const int N_SCAN = 16;
-//extern const int Horizon_SCAN = 1800;
-//extern const float ang_res_x = 0.2;
-//extern const float ang_res_y = 2.0;
-//extern const float ang_bottom = 15.0+0.1;
-//extern const int groundScanInd = 7;
+extern const int N_SCAN = 16;
+extern const int Horizon_SCAN = 1800;
+extern const float ang_res_x = 0.2;
+extern const float ang_res_y = 2.0;
+extern const float ang_bottom = 15.0+0.1;
+extern const int groundScanInd = 7;
 
 // HDL-32E
 // extern const int N_SCAN = 32;
@@ -94,14 +94,14 @@ extern const string fileDirectory = "/tmp/";
 // extern const int groundScanInd = 15;
 
 //Vel 64
-extern const int N_SCAN = 64;
-extern const int Horizon_SCAN = 1800;
-extern const float ang_res_x = 0.2;
-extern const float ang_res_y = 0.427;
-extern const float ang_bottom = 24.9;
-extern const int groundScanInd = 50;
+// extern const int N_SCAN = 64;
+// extern const int Horizon_SCAN = 1800;
+// extern const float ang_res_x = 0.2;
+// extern const float ang_res_y = 0.427;
+// extern const float ang_bottom = 24.9;
+// extern const int groundScanInd = 50;
 
-extern const bool loopClosureEnableFlag = false;
+extern const bool loopClosureEnableFlag = true;
 extern const double mappingProcessInterval = 0.3;
 
 extern const float scanPeriod = 0.1;

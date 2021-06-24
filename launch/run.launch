@@ -19,7 +19,7 @@
     <!-- <node pkg="relocalisation" type="pcl_filter"  name="pcl_filter"    output="screen"/>
     <node pkg="relocalisation" type="pcl_downsampling"  name="pcl_downsampling"    output="screen"/> -->
     <node pkg="relocalisation" type="segmentation"  name="segmentation"    output="screen"/>
-    <node pkg="relocalisation" type="extractFeatures"  name="extractFeatures"    output="screen"/>     
+<!--     <node pkg="relocalisation" type="extractFeatures"  name="extractFeatures"    output="screen"/>      -->
     <!--     <node pkg="relocalisation" type="pcl_matching"  name="pcl_matching"    output="screen"/> -->
     <node pkg="relocalisation" type="final"  name="final"    output="screen"/>
     <!--     <node pkg="relocalisation" type="dict_make"  name="dict_make"    output="screen"/> -->

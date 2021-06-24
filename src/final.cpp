@@ -1,3 +1,4 @@
+
 #include <iostream>
 #include <ros/ros.h>
 #include <pcl/visualization/cloud_viewer.h>
@@ -32,6 +33,8 @@ class listener
 
 	    float p,q,r; // translation from icp
 	    float pose[7];
+
+	    pcl::PointCloud<pcl::PointXYZ> traj;
 	    
 	    void mapCB(const sensor_msgs::PointCloud2 &input);
 	    void scanCB(const sensor_msgs::PointCloud2 &input);
@@ -82,104 +85,110 @@ class listener
         
         PM::DataPoints scene= PointMatcher_ros::rosMsgToPointMatcherCloud<float>(scan_in, false);
 
-        PointMatcherSupport::Parametrizable::Parameters params;
-        std::string name;
+        icp.setDefault();
+
+        ////////////////////////////////////////////////////////////////////////////////
+
+        // PointMatcherSupport::Parametrizable::Parameters params;
+        // std::string name;
         
-        // Uncomment for console outputs
-        // setLogger(PM::get().LoggerRegistrar.create("FileLogger"));
+        // // Uncomment for console outputs
+        // // setLogger(PM::get().LoggerRegistrar.create("FileLogger"));
 
-        // Prepare reading filters
-        name = "MinDistDataPointsFilter";
-        params["minDist"] = "1.0";
-        std::shared_ptr<PM::DataPointsFilter> minDist_read =
-            PM::get().DataPointsFilterRegistrar.create(name, params);
-        params.clear();
+        // // Prepare reading filters
+        // name = "MinDistDataPointsFilter";
+        // params["minDist"] = "1.0";
+        // std::shared_ptr<PM::DataPointsFilter> minDist_read =
+        //     PM::get().DataPointsFilterRegistrar.create(name, params);
+        // params.clear();
 
-        name = "RandomSamplingDataPointsFilter";
-        params["prob"] = "0.05";
-        std::shared_ptr<PM::DataPointsFilter> rand_read =
-            PM::get().DataPointsFilterRegistrar.create(name, params);
-        params.clear();
+        // name = "RandomSamplingDataPointsFilter";
+        // params["prob"] = "0.05";
+        // std::shared_ptr<PM::DataPointsFilter> rand_read =
+        //     PM::get().DataPointsFilterRegistrar.create(name, params);
+        // params.clear();
 
-        // Prepare reference filters
-        name = "MinDistDataPointsFilter";
-        params["minDist"] = "1.0";
-        std::shared_ptr<PM::DataPointsFilter> minDist_ref =
-            PM::get().DataPointsFilterRegistrar.create(name, params);
-        params.clear();
+        // // Prepare reference filters
+        // name = "MinDistDataPointsFilter";
+        // params["minDist"] = "1.0";
+        // std::shared_ptr<PM::DataPointsFilter> minDist_ref =
+        //     PM::get().DataPointsFilterRegistrar.create(name, params);
+        // params.clear();
 
-        name = "RandomSamplingDataPointsFilter";
-        params["prob"] = "0.05";
-        std::shared_ptr<PM::DataPointsFilter> rand_ref =
-            PM::get().DataPointsFilterRegistrar.create(name, params);
-        params.clear();
+        // name = "RandomSamplingDataPointsFilter";
+        // params["prob"] = "0.05";
+        // std::shared_ptr<PM::DataPointsFilter> rand_ref =
+        //     PM::get().DataPointsFilterRegistrar.create(name, params);
+        // params.clear();
 
-        // Prepare matching function
-        name = "KDTreeMatcher";
-        params["knn"] = "1";
-        params["epsilon"] = "3.16";
-        std::shared_ptr<PM::Matcher> kdtree =
-            PM::get().MatcherRegistrar.create(name, params);
-        params.clear();
+        // // Prepare matching function
+        // name = "KDTreeMatcher";
+        // params["knn"] = "1";
+        // params["epsilon"] = "3.16";
+        // std::shared_ptr<PM::Matcher> kdtree =
+        //     PM::get().MatcherRegistrar.create(name, params);
+        // params.clear();
 
-        // Prepare outlier filters
-        name = "TrimmedDistOutlierFilter";
-        params["ratio"] = "0.75";
-        std::shared_ptr<PM::OutlierFilter> trim =
-            PM::get().OutlierFilterRegistrar.create(name, params);
-        params.clear();
+        // // Prepare outlier filters
+        // name = "TrimmedDistOutlierFilter";
+        // params["ratio"] = "0.75";
+        // std::shared_ptr<PM::OutlierFilter> trim =
+        //     PM::get().OutlierFilterRegistrar.create(name, params);
+        // params.clear();
 
-        // Prepare error minimization
-        name = "PointToPointErrorMinimizer";
-        std::shared_ptr<PM::ErrorMinimizer> pointToPoint =
-            PM::get().ErrorMinimizerRegistrar.create(name);
+        // // Prepare error minimization
+        // name = "PointToPointErrorMinimizer";
+        // std::shared_ptr<PM::ErrorMinimizer> pointToPoint =
+        //     PM::get().ErrorMinimizerRegistrar.create(name);
 
-        // Prepare transformation checker filters
-        name = "CounterTransformationChecker";
-        params["maxIterationCount"] = "150";
-        std::shared_ptr<PM::TransformationChecker> maxIter =
-            PM::get().TransformationCheckerRegistrar.create(name, params);
-        params.clear();
+        // // Prepare transformation checker filters
+        // name = "CounterTransformationChecker";
+        // params["maxIterationCount"] = "150";
+        // std::shared_ptr<PM::TransformationChecker> maxIter =
+        //     PM::get().TransformationCheckerRegistrar.create(name, params);
+        // params.clear();
 
-        name = "DifferentialTransformationChecker";
-        params["minDiffRotErr"] = "0.001";
-        params["minDiffTransErr"] = "0.01";
-        params["smoothLength"] = "4";
-        std::shared_ptr<PM::TransformationChecker> diff =
-            PM::get().TransformationCheckerRegistrar.create(name, params);
-        params.clear();
+        // name = "DifferentialTransformationChecker";
+        // params["minDiffRotErr"] = "0.001";
+        // params["minDiffTransErr"] = "0.01";
+        // params["smoothLength"] = "4";
+        // std::shared_ptr<PM::TransformationChecker> diff =
+        //     PM::get().TransformationCheckerRegistrar.create(name, params);
+        // params.clear();
 
-        // Prepare inspector
-        std::shared_ptr<PM::Inspector> nullInspect =
-            PM::get().InspectorRegistrar.create("NullInspector");
+        // // Prepare inspector
+        // std::shared_ptr<PM::Inspector> nullInspect =
+        //     PM::get().InspectorRegistrar.create("NullInspector");
 
-        //  params.clear();
+        // //  params.clear();
 
-        // Prepare transformation
-        std::shared_ptr<PM::Transformation> rigidTrans =
-            PM::get().TransformationRegistrar.create("RigidTransformation");
+        // // Prepare transformation
+        // std::shared_ptr<PM::Transformation> rigidTrans =
+        //     PM::get().TransformationRegistrar.create("RigidTransformation");
         
-        // Build ICP solution
-        icp.readingDataPointsFilters.push_back(minDist_read);
-        icp.readingDataPointsFilters.push_back(rand_read);
+        // // Build ICP solution
+        // icp.readingDataPointsFilters.push_back(minDist_read);
+        // icp.readingDataPointsFilters.push_back(rand_read);
 
-        icp.referenceDataPointsFilters.push_back(minDist_ref);
-        icp.referenceDataPointsFilters.push_back(rand_ref);
+        // icp.referenceDataPointsFilters.push_back(minDist_ref);
+        // icp.referenceDataPointsFilters.push_back(rand_ref);
 
-        icp.matcher = kdtree;
+        // icp.matcher = kdtree;
         
-        icp.outlierFilters.push_back(trim);
+        // icp.outlierFilters.push_back(trim);
         
-        icp.errorMinimizer = pointToPoint;
+        // icp.errorMinimizer = pointToPoint;
 
-        icp.transformationCheckers.push_back(maxIter);
-        icp.transformationCheckers.push_back(diff);
+        // icp.transformationCheckers.push_back(maxIter);
+        // icp.transformationCheckers.push_back(diff);
         
-        // toggle to write vtk files per iteration
-        icp.inspector = nullInspect;
-        //icp.inspector = vtkInspect;
+        // // toggle to write vtk files per iteration
+        // icp.inspector = nullInspect;
+        // //icp.inspector = vtkInspect;
 
-        icp.transformations.push_back(rigidTrans);
+        // icp.transformations.push_back(rigidTrans);
+
+        ////////////////////////////////////////////////
 
         
         PM::TransformationParameters T = icp(object, scene);
@@ -188,7 +197,7 @@ class listener
         r = T(2,3);
 
         // std::cout << "Transformation Matrix - 1st element = \n" << T(0,3) << std::endl;
-        // std::cout << "Transformation Matrix = \n" << T << std::endl;
+        std::cout << "Transformation Matrix = \n" << T << std::endl;
 
         PM::DataPoints transformed_object(object);
         icp.transformations.apply(transformed_object, T);
@@ -202,17 +211,6 @@ class listener
     	return transformed_cloud_pcl;
 
 	}
-
-	relocalisation::updated_coord find_position(float a, float b, float c) 
-	{   
-
-        relocalisation::updated_coord new_msg;
-        new_msg.x = -c;
-        new_msg.y = -a;
-        new_msg.z = -b;
-
-        return new_msg;
-    }
 	          
     visualization_msgs::Marker make_marker(float a,float b,float c)
 	{   
@@ -264,7 +262,7 @@ class listener
     {
         pcl::PointCloud<pcl::PointXYZ> cloud_partitioned;
 
-  //       float width = 40;        // left direction
+  //       float width = 30;        // left direction
   //       float height = 20;		 // vertical direction
   //       float thickness = 20;    // front direction
 
@@ -332,6 +330,20 @@ class listener
         return final_cloud;
     }
 
+    pcl::PointCloud<pcl::PointXYZ> trajectory_pcl(pcl::PointCloud<pcl::PointXYZ> &cloud, float a,float b,float c)
+    {
+    	pcl::PointCloud<pcl::PointXYZ> final_cloud = cloud;
+    	pcl::PointXYZ new_point;
+
+    	new_point.x = a;
+    	new_point.y = b;
+    	new_point.z = c;
+
+        final_cloud.points.push_back(new_point);
+
+        return final_cloud;
+    }
+
 //////////////////////////////////////
 // Do allocation and reset tomorrow //
 //////////////////////////////////////
@@ -370,22 +382,33 @@ class listener
     //     queueIndX = new uint16_t[N_SCAN*Horizon_SCAN];
     //     queueIndY = new uint16_t[N_SCAN*Horizon_SCAN];
     // }
+    
+    relocalisation::updated_coord find_position(float a, float b, float c) 
+    {   
 
+        relocalisation::updated_coord new_msg;
+        new_msg.x = -a;
+        new_msg.y = -b;
+        new_msg.z = -c;
+
+        return new_msg;
+    }
 
 int main(int argc, char **argv){
 
     ros::init(argc, argv, "final");
     ros::NodeHandle nh;
-    ROS_INFO("\033[1;32m---->\033 [Major workback starting.");
+    ROS_INFO("\033[1;32m---->\033[0m Major workback starting.");
 
     listener L;
 
-    ros::Subscriber pcl_sub_map = nh.subscribe("pcl_map", 10, &listener::mapCB, &L);
+    ros::Subscriber pcl_sub_map = nh.subscribe("/pcl_map", 10, &listener::mapCB, &L);
     ros::Subscriber pcl_sub_scan = nh.subscribe("full_cloud_projected", 10, &listener::scanCB, &L);
     ros::Subscriber imu_sub = nh.subscribe("/laser_odom_to_init", 10 , &listener::imuCB, &L);
 
     // ros::Publisher pub_position = nh.advertise<relocalisation::updated_coord>("final_point",1);
     ros::Publisher pub_test = nh.advertise<sensor_msgs::PointCloud2>("check",1);
+    ros::Publisher pub_trajectory = nh.advertise<sensor_msgs::PointCloud2>("trajectory",1);
     ros::Publisher pcl_pub_aligned = nh.advertise<sensor_msgs::PointCloud2>("pcl_aligned", 1);
     ros::Publisher marker_pub = nh.advertise<visualization_msgs::Marker>("visualization_marker", 1);
 
@@ -395,16 +418,20 @@ int main(int argc, char **argv){
     // Initial co-ordinates
     float coord_x = 0;
 	float coord_y = 0;
-	float coord_z = 50;
+	float coord_z = 0;
+
+	for(int i=0;i<7;i++){
+		L.pose[i] = 0;
+	}
 
     while(ros::ok())
     {	
     	std::cout << "loop_start" << std::endl;
 
     	relocalisation::updated_coord temp;
-	    temp.x = L.pose[4];
-	    temp.y = L.pose[5];
-	    temp.z = L.pose[6];
+	    temp.x = coord_x;
+	    temp.y = coord_y;
+	    temp.z = coord_z;
 
 	    pcl::PointCloud<pcl::PointXYZ> rotated_scan = rotate_pointcloud(L.scan);
 
@@ -414,11 +441,11 @@ int main(int argc, char **argv){
 
 	    pcl::PointCloud<pcl::PointXYZ> area = translate_pointcloud(select_area,temp.x,temp.y,temp.z);
 
-        // sensor_msgs::PointCloud2 laserCloudOutMsg;
+        sensor_msgs::PointCloud2 laserCloudOutMsg;
 
-        // pcl::toROSMsg(area, laserCloudOutMsg);
-        // laserCloudOutMsg.header.frame_id = "/camera_init";
-        // pub_test.publish(laserCloudOutMsg);
+        pcl::toROSMsg(area, laserCloudOutMsg);
+        laserCloudOutMsg.header.frame_id = "/camera_init";
+        pub_test.publish(laserCloudOutMsg);
 
         if (area.points.size()>0 && scan.points.size()>0 )
         {
@@ -439,6 +466,13 @@ int main(int argc, char **argv){
 	        coord_x = position.x + temp.x; 
 	        coord_y = position.y;
 	        coord_z = position.z + temp.z;
+
+	        // pcl::PointCloud<pcl::PointXYZ> trajectory = trajectory_pcl(L.traj,coord_x,coord_y,coord_z);
+
+	        // sensor_msgs::PointCloud2 laserCloudOutMsg;
+	        // pcl::toROSMsg(trajectory, laserCloudOutMsg);
+	        // laserCloudOutMsg.header.frame_id = "/camera_init";
+	        // pub_trajectory.publish(laserCloudOutMsg);
 
 	        visualization_msgs::Marker current_position = make_marker(coord_x,coord_y,coord_z);
 	        marker_pub.publish(current_position);

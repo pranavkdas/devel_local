@@ -127,6 +127,7 @@ generate_messages(
 #   CATKIN_DEPENDS pcl pcl_ros roscpp rospy sensor_msgs std_msgs
 #  DEPENDS system_lib
 # )
+
 catkin_package(
   INCLUDE_DIRS include
   CATKIN_DEPENDS cloud_msgs message_runtime 
