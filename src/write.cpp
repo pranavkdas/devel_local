@@ -36,9 +36,9 @@ main (int argc, char **argv)
 
     write_cloud L;
 
-    // ros::Rate loop_rate(100);
+    ros::Rate loop_rate(10);
 
-    ros::Subscriber edges_sub = nh.subscribe("/laser_cloud_less_sharp", 10, &write_cloud::edgesCB, &L);
+    ros::Subscriber edges_sub = nh.subscribe("/laser_cloud_less_sharp", 1, &write_cloud::edgesCB, &L);
     // ros::Subscriber surface_sub = nh.subscribe("/laser_cloud_less_flat", 10, &write_cloud::surfaceCB, &L);
 
     while(ros::ok){
@@ -47,11 +47,12 @@ main (int argc, char **argv)
     	pcl::PointCloud<pcl::PointXYZ> cloud_to_save = L.final_cloud;
     	if(cloud_to_save.points.size()>0){
     		std::cout << "saving" << std::endl;
-    		pcl::io::savePCDFileASCII ("map_kitti_30sec.pcd", cloud_to_save);
+    		pcl::io::savePCDFileASCII ("kitti_30sec.pcd", cloud_to_save);
+            break;
     	}
 
     	ros::spin();
-        // loop_rate.sleep();
+        loop_rate.sleep();
     }
 
     // ros::spin();

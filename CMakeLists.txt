@@ -4,7 +4,28 @@ project(relocalisation)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3")
+## set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3")
+add_definitions(-std=c++14 -msse -msse2 -msse3 -msse4 -msse4.1 -msse4.2)
+set(CMAKE_CXX_FLAGS "-std=c++14 -msse -msse2 -msse3 -msse4 -msse4.1 -msse4.2")
+
+# pcl 1.7 causes a segfault when it is built with debug mode
+set(CMAKE_BUILD_TYPE "RELEASE")
+
+
+find_package(PCL 1.7 REQUIRED)
+include_directories(${PCL_INCLUDE_DIRS})
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
+
+message(STATUS "PCL_INCLUDE_DIRS:" ${PCL_INCLUDE_DIRS})
+message(STATUS "PCL_LIBRARY_DIRS:" ${PCL_LIBRARY_DIRS})
+message(STATUS "PCL_DEFINITIONS:" ${PCL_DEFINITIONS})
+
+find_package(OpenMP)
+if (OPENMP_FOUND)
+    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+endif()
 
 find_package(catkin REQUIRED COMPONENTS
   pcl_ros
@@ -132,6 +153,7 @@ catkin_package(
   INCLUDE_DIRS include
   CATKIN_DEPENDS cloud_msgs message_runtime 
   DEPENDS PCL
+  LIBRARIES ndt_omp
 )
 
 ###########
@@ -146,9 +168,13 @@ include_directories(
 )
 
 ## Declare a cpp library
-# add_library(retrorov_model_bathymetric
+add_library(ndt_omp
 #   src/${PROJECT_NAME}/retrorov_model_bathymetric.cpp
-# )
+  
+  src/pclomp/voxel_grid_covariance_omp.cpp
+  src/pclomp/ndt_omp.cpp
+  src/pclomp/gicp_omp.cpp
+)
 
 ## Declare a cpp executable
 
@@ -164,7 +190,17 @@ add_executable(extractFeatures src/extractFeatures.cpp)
 add_executable(gps_dict src/gps_dict.cpp)
 add_executable(final src/final.cpp)
 
-
+add_executable(align
+  apps/align.cpp
+)
+add_dependencies(align
+  ndt_omp
+)
+target_link_libraries(align
+  ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
+  ndt_omp
+)
 
 
  
@@ -174,7 +210,9 @@ add_executable(final src/final.cpp)
 
 add_dependencies(segmentation ${catkin_EXPORTED_TARGETS} cloud_msgs_gencpp)
 add_dependencies(extractFeatures ${catkin_EXPORTED_TARGETS} cloud_msgs_gencpp)
-
+add_dependencies(final
+  ndt_omp
+)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(pcl_publish ${catkin_LIBRARIES} ${PCL_LIBRARIES})
@@ -187,12 +225,17 @@ target_link_libraries(segmentation ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${OpenCV
 target_link_libraries(extractFeatures ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${OpenCV_LIBRARIES})
 target_link_libraries(gps_dict ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 target_link_libraries(final ${catkin_LIBRARIES} ${PCL_LIBRARIES})
-
+target_link_libraries(final
+  ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
+  ndt_omp
+)
 
 
 #############
 ## Install ##
 #############
+
 
 # all install targets should use catkin DESTINATION variables
 # See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
@@ -205,7 +248,7 @@ target_link_libraries(final ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS retrorov_model_bathymetric retrorov_model_bathymetric_node
+# install(TARGETS retrorov_model_bathymetric retrorov_model_bathymetric_node ndt_omp
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -239,4 +282,12 @@ target_link_libraries(final ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 # catkin_add_nosetests(test)
 
 ###### adding all stuff from lego #####
+
+
+
+
+
+
+
+
 

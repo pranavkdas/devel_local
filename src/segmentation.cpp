@@ -34,6 +34,12 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/point_cloud.h>
+#include <pcl/io/pcd_io.h>
+#include <pcl/point_types.h>
+#include <pcl/filters/voxel_grid.h>
+#include "points_downsampler.h"
+
+
 
 class ImageProjection{
 private:
@@ -52,6 +58,7 @@ private:
     ros::Publisher pubOutlierCloud;
 
     pcl::PointCloud<PointType>::Ptr laserCloudIn;
+    pcl::PointCloud<pcl::PointXYZ> laserCloudMAIN;
 
     pcl::PointCloud<PointType>::Ptr fullCloud; // projected velodyne raw cloud, but saved in the form of 1-D matrix
     pcl::PointCloud<PointType>::Ptr fullInfoCloud; // same as fullCloud, but with intensity - range
@@ -82,6 +89,8 @@ private:
     uint16_t *queueIndX; // array for breadth-first search process of segmentation
     uint16_t *queueIndY;
 
+    ros::Publisher filtered_points_pub;
+
 public:
     ImageProjection():
         nh("~"){
@@ -96,7 +105,8 @@ public:
         pubSegmentedCloudPure = nh.advertise<sensor_msgs::PointCloud2> ("/segmented_cloud_pure", 1);
         pubSegmentedCloudInfo = nh.advertise<cloud_msgs::cloud_info> ("/segmented_cloud_info", 1);
         pubOutlierCloud = nh.advertise<sensor_msgs::PointCloud2> ("/outlier_cloud", 1);
-
+        filtered_points_pub = nh.advertise<sensor_msgs::PointCloud2> ("/pcl_scan", 1);
+        
         nanPoint.x = std::numeric_limits<float>::quiet_NaN();
         nanPoint.y = std::numeric_limits<float>::quiet_NaN();
         nanPoint.z = std::numeric_limits<float>::quiet_NaN();
@@ -207,6 +217,7 @@ public:
 
         cloudSize = laserCloudIn->points.size();
 
+
         for (size_t i = 0; i < cloudSize; ++i){
 
             thisPoint.x = laserCloudIn->points[i].x;
@@ -240,7 +251,6 @@ public:
             fullInfoCloud->points[index] = thisPoint;
             fullInfoCloud->points[index].intensity = range; // the corresponding range of a point is saved as "intensity"
         }
-
 
     }
 
