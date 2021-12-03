@@ -4,6 +4,7 @@
 - Low latency 
 - Included IMU correction
 ### Requirements :
+- ROS cpp
 - pcl
 - libpointmatcher
 
