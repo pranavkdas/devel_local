@@ -1,7 +1,8 @@
 # Latest version: 
-### final.cpp - Object oriented method of Version 1 with following modifications :
+### final.cpp - Object oriented method of Version 1 with following improvements :
 - Updated scan matching algorithm
-- Included IMU filtering
+- Low latency 
+- Included IMU correction
 ### Requirements :
 - pcl
 - libpointmatcher
